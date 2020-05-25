@@ -1,0 +1,28 @@
+PROCESS BEFORE OUTPUT.
+*Asignar estatus.
+  MODULE STATUS_0100.
+* Llamando SubscreenAreas.
+*  CASE i_main_tab-pressed_tab.
+*      WHEN c_main_tab-tab1.
+*        CALL SUBSCREEN SA_TAB1 INCLUDING i_main_tab-prog
+*i_main_tab-subscreen.
+*      WHEN c_main_tab-tab2.
+*        CALL SUBSCREEN SA_TAB2 INCLUDING i_main_tab-prog
+*i_main_tab-subscreen.
+*      WHEN c_main_tab-tab3.
+*        CALL SUBSCREEN SA_TAB3 INCLUDING i_main_tab-prog
+*i_main_tab-subscreen.
+*      WHEN OTHERS.
+*  ENDCASE.
+  CALL SUBSCREEN:
+  SA_TAB1 INCLUDING i_main_tab-prog '0101',
+  SA_TAB2 INCLUDING i_main_tab-prog '0102',
+  SA_TAB3 INCLUDING i_main_tab-prog '0103'.
+*Armar reporte
+  MODULE armar_alv_0100.
+
+PROCESS AFTER INPUT.
+*Validar salida de pantalla.
+ MODULE USER_COMMAND_EXIT_0100 AT EXIT-COMMAND.
+* Para identificar Tab seleccionada/activa.
+MODULE main_tab_active_tab_get.

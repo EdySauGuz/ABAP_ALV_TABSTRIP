@@ -1,0 +1,112 @@
+*&---------------------------------------------------------------------*
+*& Include          ZCROSS_OP_MAT_TOP
+*&---------------------------------------------------------------------*
+REPORT ZCROSS_OP_MAT
+NO STANDARD PAGE HEADING.
+
+TABLES:
+  mara.
+
+TYPES:
+
+  BEGIN OF ty_mara,
+    matnr TYPE mara-matnr,  " No. de Material.
+  END OF ty_mara,
+
+  BEGIN OF ty_ekbe,
+    ebeln TYPE ekbe-ebeln,  " No. Doc. de Compra.
+    ebelp TYPE ekbe-ebelp,  " No. Posición.
+    matnr TYPE ekbe-matnr,  " No. de Material.
+  END OF ty_ekbe,
+
+  BEGIN OF ty_eket,
+    ebeln TYPE eket-ebeln,  " No. Doc. de Compra.
+    ebelp TYPE eket-ebelp,  " No. Posición.
+    charg TYPE eket-charg,  " No. de Lote interno.
+    licha TYPE eket-licha,  " No. de Lote Prov.
+    menge TYPE eket-menge,  " Cantidad de reparto.
+    wemng TYPE eket-wemng,  " Cantidad entrada de mercancías.
+  END OF ty_eket,
+
+  BEGIN OF ty_mard,
+    werks TYPE mard-werks,  " Centro.
+    lgort TYPE mard-lgort,  " Almacén.
+    matnr TYPE mard-matnr,  " No. de Material.
+    labst TYPE mard-labst,  " Stock valorado de libre utilización.
+    umlme TYPE mard-umlme,  " Stock en traslado (de almacén a almacén).
+    insme TYPE mard-insme,  " Stock en inspección de calidad.
+    einme TYPE mard-einme,  " Stock total de lotes (todos) no libres.
+    speme TYPE mard-speme,  " Stock bloqueado.
+    retme TYPE mard-retme,  " Stock bloqueado de devoluciones.
+  END OF ty_mard,
+
+  BEGIN OF ty_vbap,
+    vbeln TYPE vbap-vbeln,  " No. Doc. de Ventas.
+    posnr TYPE vbap-posnr,  " No. Posición.
+    matnr TYPE vbap-matnr,  " No. de Material.
+    uvvlk TYPE vbap-uvvlk,  " Estatus Pos. para Entrega.
+    uvfak TYPE vbap-uvfak,  " Estatus Pos. para Factura.
+  END OF ty_vbap.
+
+* Tablas internas.
+DATA:
+      tg_mara             TYPE STANDARD TABLE OF ty_mara,
+      tg_ekbe             TYPE STANDARD TABLE OF ty_ekbe,
+      tg_eket             TYPE STANDARD TABLE OF ty_eket,
+      tg_mard             TYPE STANDARD TABLE OF ty_mard,
+      tg_vbap             TYPE STANDARD TABLE OF ty_vbap,
+      tg_fieldcatc        TYPE lvc_t_fcat,
+      tg_reporte_tab1     TYPE ztt_op_mat_compras,
+      tg_reporte_tab2     TYPE ztt_op_mat_stocks,
+      tg_reporte_tab3     TYPE ztt_op_mat_ventas,
+      tg_alv_tab1         TYPE STANDARD TABLE OF zes_op_mat_compras,
+      tg_alv_tab2         TYPE STANDARD TABLE OF zes_op_mat_stocks,
+      tg_alv_tab3         TYPE STANDARD TABLE OF zes_op_mat_ventas.
+
+* Tablas temporales (WorkAreas).
+DATA:
+      wa_mara             TYPE ty_mara,
+      wa_ekbe             TYPE ty_ekbe,
+      wa_eket             TYPE ty_eket,
+      wa_mard             TYPE ty_mard,
+      wa_vbap             TYPE ty_vbap,
+      wa_reporte_tab1     TYPE zes_op_mat_compras,
+      wa_reporte_tab2     TYPE zes_op_mat_stocks,
+      wa_reporte_tab3     TYPE zes_op_mat_ventas,
+      wa_fieldcatc        TYPE lvc_s_fcat.
+
+*  ALV con clases
+  DATA:
+        og_cc_tab1          TYPE REF TO cl_gui_custom_container,
+        og_cc_tab2          TYPE REF TO cl_gui_custom_container,
+        og_cc_tab3          TYPE REF TO cl_gui_custom_container,
+        og_container_tab1   TYPE scrfname VALUE 'CC_TAB1',
+        og_container_tab2   TYPE scrfname VALUE 'CC_TAB2',
+        og_container_tab3   TYPE scrfname VALUE 'CC_TAB3',
+        og_grid             TYPE REF TO cl_gui_alv_grid,
+        sg_layoutc          TYPE lvc_s_layo.
+
+*  Variables globales
+  DATA:
+        vg_okcode TYPE sy-ucomm.
+
+* Constantes de Tabs
+CONSTANTS: BEGIN OF c_main_tab,
+            tab1 LIKE sy-ucomm VALUE 'SA_TAB1',
+            tab2 LIKE sy-ucomm VALUE 'SA_TAB2',
+            tab3 LIKE sy-ucomm VALUE 'SA_TAB3',
+           END OF c_main_tab.
+CONTROLS:  main_tab TYPE TABSTRIP.
+DATA:
+      BEGIN OF i_main_tab,
+        subscreen   LIKE sy-dynnr,
+        prog        LIKE sy-repid VALUE 'ZCROSS_OP_MAT',
+        pressed_tab LIKE sy-ucomm VALUE c_main_tab-tab1, " Para identificar tab seleccionado/activo.
+      END OF i_main_tab.
+
+  SELECTION-SCREEN: BEGIN OF BLOCK blk1 WITH FRAME TITLE TEXT-001.
+
+    SELECT-OPTIONS:
+      so_matnr  FOR mara-matnr.
+
+  SELECTION-SCREEN: END OF BLOCK blk1.

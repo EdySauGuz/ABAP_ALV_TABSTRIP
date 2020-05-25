@@ -1,0 +1,217 @@
+*&---------------------------------------------------------------------*
+*& Include          ZCROSS_OP_MAT_F01
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+*& Form F_OBTENER_DATOS
+*&---------------------------------------------------------------------*
+*& Obtener datos para reporte.
+*&---------------------------------------------------------------------*
+FORM f_obtener_datos .
+
+* Obteniendo todos los materiales.
+  SELECT  matnr
+  FROM mara
+  INTO TABLE tg_mara
+  WHERE matnr IN so_matnr.
+
+  IF tg_mara IS NOT INITIAL.
+
+*   Obteniendo posiciones de PO, donde se encuentren materiales existentes.
+    SELECT  ebeln
+            ebelp
+            matnr
+    FROM ekbe
+    INTO TABLE tg_ekbe
+    FOR ALL ENTRIES IN tg_mara
+    WHERE matnr EQ tg_mara-matnr.
+
+    IF tg_ekbe IS NOT INITIAL.
+*     Obtener cantidades de reporto.
+      SELECT  ebeln
+              ebelp
+              charg
+              licha
+              menge
+              wemng
+      FROM eket
+      INTO TABLE tg_eket
+      FOR ALL ENTRIES IN tg_ekbe
+      WHERE ebeln EQ tg_ekbe-ebeln
+      AND   ebelp EQ tg_ekbe-ebelp.
+    ENDIF.
+
+*   Obtener stocks por almacén.
+    SELECT  werks
+            lgort
+            matnr
+            labst
+            umlme
+            insme
+            einme
+            speme
+            retme
+    FROM mard
+    INTO TABLE tg_mard
+    FOR ALL ENTRIES IN tg_mara
+    WHERE matnr EQ tg_mara-matnr.
+
+*   Obtener Docs. de Ventas.
+    SELECT  vbeln
+            posnr
+            matnr
+            uvvlk
+            uvfak
+    FROM vbap
+    INTO TABLE tg_vbap
+    FOR ALL ENTRIES IN tg_mara
+    WHERE matnr EQ tg_mara-matnr.
+
+  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form F_LLENAR_REPORTE
+*&---------------------------------------------------------------------*
+*& Moviendo datos de tablas temporales a reporte.
+*&---------------------------------------------------------------------*
+FORM f_llenar_reporte .
+
+LOOP AT tg_mara
+INTO wa_mara.
+
+* Moviendo datos a reporte Tab Compras.
+  CLEAR:  wa_reporte_tab1,
+          wa_ekbe,
+          wa_eket.
+
+  READ TABLE tg_ekbe
+  INTO wa_ekbe
+  WITH KEY matnr = wa_mara-matnr.
+
+  READ TABLE tg_eket
+  INTO wa_eket
+  WITH KEY  ebeln = wa_ekbe-ebeln
+            ebelp = wa_ekbe-ebelp.
+
+  IF wa_eket-menge - wa_eket-wemng > 0.
+    wa_reporte_tab1-ebeln = wa_ekbe-ebeln.
+    wa_reporte_tab1-ebelp = wa_ekbe-ebelp.
+    wa_reporte_tab1-matnr = wa_ekbe-matnr.
+    wa_reporte_tab1-charg = wa_eket-charg.
+    wa_reporte_tab1-licha = wa_eket-licha.
+    wa_reporte_tab1-cant_ent = wa_eket-menge - wa_eket-wemng.
+
+    APPEND wa_reporte_tab1 TO tg_reporte_tab1.
+  ENDIF.
+
+* Moviendo datos a reporte Tab Stocks.
+  CLEAR:  wa_reporte_tab2,
+          wa_mard.
+
+  READ TABLE tg_mard
+  INTO wa_mard
+  WITH KEY matnr = wa_mara-matnr.
+
+  IF wa_mard-labst > 0 OR wa_mard-umlme > 0 OR wa_mard-insme > 0 OR wa_mard-einme > 0 OR wa_mard-speme > 0 OR wa_mard-retme > 0.
+    wa_reporte_tab2-werks = wa_mard-werks.
+    wa_reporte_tab2-lgort = wa_mard-lgort.
+    wa_reporte_tab2-matnr = wa_mard-matnr.
+    wa_reporte_tab2-labst = wa_mard-labst.
+    wa_reporte_tab2-umlme = wa_mard-umlme.
+    wa_reporte_tab2-insme = wa_mard-insme.
+    wa_reporte_tab2-einme = wa_mard-einme.
+    wa_reporte_tab2-speme = wa_mard-speme.
+    wa_reporte_tab2-retme = wa_mard-retme.
+
+    APPEND wa_reporte_tab2 TO tg_reporte_tab2.
+  ENDIF.
+
+* Moviendo datos a reporte Tab Ventas.
+  CLEAR:  wa_reporte_tab3,
+          wa_vbap.
+
+  READ TABLE tg_vbap
+  INTO wa_vbap
+  WITH KEY matnr = wa_mara-matnr.
+
+  IF ( wa_vbap-uvvlk <> 'C' AND wa_vbap-uvvlk <> space ) OR ( wa_vbap-uvfak <> 'C' AND wa_vbap-uvfak <> space ).
+    wa_reporte_tab3-vbeln = wa_vbap-vbeln.
+    wa_reporte_tab3-posnr = wa_vbap-posnr.
+    wa_reporte_tab3-matnr = wa_vbap-matnr.
+    wa_reporte_tab3-uvvlk = wa_vbap-uvvlk.
+    wa_reporte_tab3-uvfak = wa_vbap-uvfak.
+
+    APPEND wa_reporte_tab3 TO tg_reporte_tab3.
+  ENDIF.
+
+ENDLOOP.
+
+*  Asignar arreglo de datos de reporte a alv.
+  tg_alv_tab1[] = tg_reporte_tab1[].
+  tg_alv_tab2[] = tg_reporte_tab2[].
+  tg_alv_tab3[] = tg_reporte_tab3[].
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form F_IMPRIMIR_REPORTE
+*&---------------------------------------------------------------------*
+FORM f_imprimir_reporte .
+
+  IF tg_reporte_tab1[] IS INITIAL AND tg_reporte_tab2[] IS INITIAL AND tg_reporte_tab3[] IS INITIAL.
+    MESSAGE TEXT-002
+    TYPE 'S'
+    DISPLAY LIKE 'E'.
+  ELSE.
+    CALL SCREEN 0100.
+  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form ARMAR_CATALOGO_CAMPOS
+*&---------------------------------------------------------------------*
+*& text
+*&---------------------------------------------------------------------*
+*&      --> ESTRUCTURA
+*&      <-- TG_FIELDCATC
+*&---------------------------------------------------------------------*
+FORM armar_catalogo_campos  USING pv_estructura_alv TYPE dd02l-tabname
+                            CHANGING pt_fieldcatc   TYPE lvc_t_fcat.
+
+*  Obtener catalogo de campos.
+  CALL FUNCTION 'LVC_FIELDCATALOG_MERGE'
+    EXPORTING
+*     I_BUFFER_ACTIVE        =
+      i_structure_name       = pv_estructura_alv
+*     I_CLIENT_NEVER_DISPLAY = 'X'
+*     I_BYPASSING_BUFFER     =
+*     I_INTERNAL_TABNAME     =
+    CHANGING
+      ct_fieldcat            = pt_fieldcatc
+    EXCEPTIONS
+      inconsistent_interface = 1
+      program_error          = 2
+      OTHERS                 = 3.
+
+  IF sy-subrc <> 0.
+
+    MESSAGE ID sy-msgid
+    TYPE  sy-msgty
+    NUMBER sy-msgno
+    WITH  sy-msgv1
+          sy-msgv2
+          sy-msgv3
+          sy-msgv4.
+
+  ENDIF.
+
+ENDFORM.
+*&---------------------------------------------------------------------*
+*& Form F_DEFINIR_LAYOUT_ALV
+*&---------------------------------------------------------------------*
+FORM f_definir_layout_alv .
+
+  sg_layoutc-sel_mode   = 'D'. " Modo de selección.
+  sg_layoutc-zebra      = 'X'. " Vista de filas.
+  sg_layoutc-cwidth_opt = 'X'. " Barra de opciones.
+
+ENDFORM.

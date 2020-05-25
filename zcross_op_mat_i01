@@ -1,0 +1,37 @@
+*&---------------------------------------------------------------------*
+*& Include          ZCROSS_OP_MAT_I01
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+*&      Module  USER_COMMAND_EXIT_0100  INPUT
+*&---------------------------------------------------------------------*
+MODULE user_command_exit_0100 INPUT.
+
+  CASE vg_okcode.
+    WHEN 'EXIT' OR 'BACK' OR 'CANC'.
+      LEAVE TO SCREEN 0.
+    WHEN OTHERS.
+  ENDCASE.
+
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*&      Module  MAIN_TAB_ACTIVE_TAB_GET  INPUT
+*&---------------------------------------------------------------------*
+*       Para saber Tab activo.
+*----------------------------------------------------------------------*
+MODULE main_tab_active_tab_get INPUT.
+
+  CASE sy-ucomm.
+    WHEN c_main_tab-tab1.
+      i_main_tab-pressed_tab = c_main_tab-tab1.
+      i_main_tab-subscreen = '0101'.
+    WHEN c_main_tab-tab2.
+      i_main_tab-pressed_tab = c_main_tab-tab2.
+      i_main_tab-subscreen = '0102'.
+      WHEN c_main_tab-tab3.
+      i_main_tab-pressed_tab = c_main_tab-tab3.
+      i_main_tab-subscreen = '0103'.
+    WHEN OTHERS.
+*      DO NOTHING
+  ENDCASE.
+
+ENDMODULE.

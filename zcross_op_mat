@@ -1,0 +1,23 @@
+*&---------------------------------------------------------------------*
+*& Report ZCROSS_OP_MAT
+*&---------------------------------------------------------------------*
+*& Reporte de Operaciones de Material.
+*&---------------------------------------------------------------------*
+INCLUDE:
+  zcross_op_mat_top, " Definición de variables y pantalla de selección.
+  zcross_op_mat_f01, " Definición de rutinas.
+  zcross_op_mat_o01, " Procesos antes de salida.
+  zcross_op_mat_i01. " Procesos después de entrada.
+
+START-OF-SELECTION.
+
+* Realizar selección de datos.
+PERFORM f_obtener_datos.
+
+* Llenar tabla para reporte.
+PERFORM f_llenar_reporte.
+
+END-OF-SELECTION.
+
+* Imprimir reporte.
+PERFORM f_imprimir_reporte.

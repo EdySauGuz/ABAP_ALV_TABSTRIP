@@ -1,0 +1,110 @@
+*&---------------------------------------------------------------------*
+*& Include          ZCROSS_OP_MAT_O01
+*&---------------------------------------------------------------------*
+*&---------------------------------------------------------------------*
+*& Module STATUS_0100 OUTPUT
+*&---------------------------------------------------------------------*
+*& Asignar estatus a pantalla 0100
+*&---------------------------------------------------------------------*
+MODULE status_0100 OUTPUT.
+
+  SET PF-STATUS 'GUI_0100'.
+  SET TITLEBAR 'T0001'.
+
+ENDMODULE.
+*&---------------------------------------------------------------------*
+*& Module ARMAR_ALV_0100 OUTPUT
+*&---------------------------------------------------------------------*
+*& Armar ALV.
+*&---------------------------------------------------------------------*
+MODULE armar_alv_0100 OUTPUT.
+
+    main_tab-activetab = i_main_tab-pressed_tab.
+
+    DATA: estructura          TYPE dd02l-tabname,
+          og_c                TYPE scrfname,
+          og_custom_container TYPE REF TO cl_gui_custom_container.
+
+    CASE i_main_tab-pressed_tab.
+      WHEN c_main_tab-tab1.
+        estructura = 'ZES_OP_MAT_COMPRAS'.
+        og_c = og_container_tab1.
+        og_custom_container = og_cc_tab1.
+        i_main_tab-subscreen = '0101'.
+      WHEN c_main_tab-tab2.
+        estructura = 'ZES_OP_MAT_STOCKS'.
+        og_c = og_container_tab2.
+        og_custom_container = og_cc_tab2.
+        i_main_tab-subscreen = '0102'.
+      WHEN c_main_tab-tab3.
+        estructura = 'ZES_OP_MAT_VENTAS'.
+        og_c = og_container_tab3.
+        og_custom_container = og_cc_tab3.
+        i_main_tab-subscreen = '0103'.
+    ENDCASE.
+
+  IF og_custom_container IS INITIAL.
+
+    CLEAR:  tg_fieldcatc,
+            og_grid.
+
+*    Armar Catalogo de campos.
+    PERFORM armar_catalogo_campos
+    USING estructura
+    CHANGING tg_fieldcatc.
+
+*    Definir layout.
+    PERFORM f_definir_layout_alv.
+
+    CREATE OBJECT og_custom_container
+    EXPORTING
+      container_name = og_c.
+
+    CREATE OBJECT og_grid
+    EXPORTING
+      i_parent = og_custom_container.
+
+    CASE i_main_tab-pressed_tab.
+      WHEN c_main_tab-tab1.
+*      Llamando método para salida de ALV.
+       CALL METHOD og_grid->set_table_for_first_display
+       EXPORTING
+         is_layout         = sg_layoutc
+         i_structure_name  = 'ZES_OP_MAT_COMPRAS'
+         i_save            = 'A'
+       CHANGING
+         it_fieldcatalog   = tg_fieldcatc[]
+         it_outtab         = tg_alv_tab1.
+      WHEN c_main_tab-tab2.
+*      Llamando método para salida de ALV.
+       CALL METHOD og_grid->set_table_for_first_display
+       EXPORTING
+         is_layout         = sg_layoutc
+         i_structure_name  = 'ZES_OP_MAT_STOCKS'
+         i_save            = 'A'
+       CHANGING
+         it_fieldcatalog   = tg_fieldcatc[]
+         it_outtab         = tg_alv_tab2.
+      WHEN c_main_tab-tab3.
+*      Llamando método para salida de ALV.
+       CALL METHOD og_grid->set_table_for_first_display
+       EXPORTING
+         is_layout         = sg_layoutc
+         i_structure_name  = 'ZES_OP_MAT_VENTAS'
+         i_save            = 'A'
+       CHANGING
+         it_fieldcatalog   = tg_fieldcatc[]
+         it_outtab         = tg_alv_tab3.
+    ENDCASE.
+
+  ELSE.
+
+*  Refrescar ALV.
+    CALL METHOD og_grid->refresh_table_display
+    EXCEPTIONS
+      finished  = 1
+      OTHERS    = 2.
+
+  ENDIF.
+
+ENDMODULE.
